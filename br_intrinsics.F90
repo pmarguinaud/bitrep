@@ -1,4 +1,4 @@
-MODULE MODI_BITREP
+MODULE BR_INTRINSICS
 !
 !    MODIFICATIONS
 !    -------------  
@@ -198,4 +198,4 @@ else if ((PB == 0.0) .and. (PA == 0.0)) then
 end if
 !
   END FUNCTION BR_ATAN2
-END MODULE MODI_BITREP
+END MODULE BR_INTRINSICS
