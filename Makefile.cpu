@@ -1,0 +1,3 @@
+FC=nvfortran -mp -byteswapio -Mlarge_arrays -O0 -r8
+CXX=nvc++ -std=c++11 -O0 
+

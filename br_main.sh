@@ -15,5 +15,6 @@ cd /home/gmap/mrpm/marguina/SAVE/scratch/BITREP
 ulimit -s unlimited
 export OMP_STACKSIZE=8Gb
 
-./br_main.x
+./br_main.gpu.x
+./br_main.cpu.x
 
