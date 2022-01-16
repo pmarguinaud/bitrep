@@ -513,7 +513,6 @@ double sinh(double x)
     xx.i[1] = xx.i[1] & 0x7fffffff;
 
     int32_t& thi = xx.i[1];
-    int32_t& tlo = xx.i[0];
     double& t = xx.d;
 
     if (thi < 0x3ff00000) {
