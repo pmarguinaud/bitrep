@@ -1,5 +1,5 @@
-FC=nvfortran -mp -byteswapio -Mlarge_arrays -acc=gpu -Minfo=accel,all,intensity,ccff -gpu=lineinfo -O0 -Mcuda -r8
-CXX=nvc++ -std=c++11 -acc=gpu -Minfo=accel,all,intensity,ccff -gpu=lineinfo -O0 -Mcuda
+FC=nvfortran -mp -byteswapio -Mlarge_arrays -acc=gpu -Minfo=accel,all,intensity,ccff -gpu=lineinfo -O0 -Mcuda -r8 -Mnofma
+CXX=nvc++ -std=c++11 -acc=gpu -Minfo=accel,all,intensity,ccff -gpu=lineinfo -O0 -Mcuda -Mnofma
 
 
 all: br_main.x

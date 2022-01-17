@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 2016-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_BITREP
 !
 !    MODIFICATIONS
@@ -76,8 +81,8 @@ END FUNCTION
 ELEMENTAL FUNCTION BR_POW(PVAL,PPOW)
 !$acc routine seq
 !
-REAL, INTENT(IN) :: PVAL,PPOW
-REAL             :: BR_POW
+REAL, VALUE, INTENT(IN) :: PVAL, PPOW
+REAL                    :: BR_POW
 !
 BR_POW = BR_EXP( PPOW * BR_LOG(PVAL) )
 !
