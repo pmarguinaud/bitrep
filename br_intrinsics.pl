@@ -1,0 +1,207 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FileHandle;
+
+my $fh = \*STDOUT;
+
+my @func = qw (SIN COS TAN ASIN ACOS ATAN SINH COSH TANH ASINH ACOSH ATANH LOG EXP);
+
+$fh->print (<< "EOF");
+MODULE BR_INTRINSICS
+
+USE, INTRINSIC :: ISO_C_BINDING
+
+IMPLICIT NONE
+
+INTEGER, PARAMETER :: JPRD = 8, JPRM = 4
+
+PRIVATE 
+
+EOF
+
+for my $func (@func, qw (ATAN2 POW))
+  {
+    $fh->print ("PUBLIC :: BR_$func\n");
+  }
+
+$fh->print ("\nINTERFACE\n");
+
+for my $func (@func)
+  {
+    $fh->print (<< "EOF");
+PURE REAL(KIND=C_DOUBLE) FUNCTION BR_${func}_C(P) BIND(C,NAME="\Lbr_$func\U")
+!\$ACC ROUTINE SEQ
+IMPORT C_DOUBLE
+REAL(KIND=C_DOUBLE), VALUE, INTENT(IN) :: P
+END FUNCTION
+
+EOF
+
+  }
+
+$fh->print ("END INTERFACE\n\n");
+
+for my $func (@func, qw (ATAN2))
+  {
+    $fh->print (<< "EOF");
+INTERFACE BR_${func}
+  MODULE PROCEDURE BR_${func}_RM
+  MODULE PROCEDURE BR_${func}_RD
+END INTERFACE
+
+EOF
+  }
+
+$fh->print (<< "EOF");
+INTERFACE BR_POW
+  MODULE PROCEDURE BR_POWRR_RM
+  MODULE PROCEDURE BR_POWRR_RD
+  MODULE PROCEDURE BR_POWRN_RM
+  MODULE PROCEDURE BR_POWRN_RD
+  MODULE PROCEDURE BR_POWNN
+END INTERFACE
+
+EOF
+
+$fh->print ("CONTAINS\n\n");
+
+for my $kind (qw (RM RD))
+  {
+    for my $func (@func)
+      {
+        $fh->print (<< "EOF");
+ELEMENTAL REAL (KIND=JP${kind}) FUNCTION BR_${func}_${kind}(P)
+!\$ACC ROUTINE SEQ
+REAL (KIND=JP${kind}), INTENT(IN) :: P
+BR_${func}_${kind} = BR_${func}_C(REAL(P,KIND=C_DOUBLE))
+END FUNCTION
+
+EOF
+      }
+  }
+
+
+for my $kind (qw (RM RD))
+  {
+    $fh->print (<< "EOF");
+ELEMENTAL REAL (KIND=JP${kind}) FUNCTION BR_ATAN2_${kind} (PA, PB)
+!\$ACC ROUTINE SEQ
+
+REAL (KIND=JP${kind}), INTENT(IN) :: PA, PB
+
+REAL (KIND=JPRD) , PARAMETER :: PI = 3.1415926535897932384626433832795_JPRD
+
+IF (PB > 0.0) THEN 
+  BR_ATAN2_${kind} = BR_ATAN(PA/PB)
+ELSE IF ((PB < 0.0_JP${kind}) .AND. (PA >= 0.0_JP${kind})) THEN
+  BR_ATAN2_${kind} = BR_ATAN(PA/PB) + PI
+ELSE IF ((PB < 0.0_JP${kind}) .AND. (PA < 0.0_JP${kind})) THEN
+  BR_ATAN2_${kind} = BR_ATAN(PA/PB) - PI
+ELSE IF ((PB == 0.0_JP${kind}) .AND. (PA > 0.0_JP${kind})) THEN
+  BR_ATAN2_${kind} = PI / 2.0_JP${kind} 
+ELSE IF ((PB == 0.0_JP${kind}) .AND. (PA < 0.0_JP${kind})) THEN
+  BR_ATAN2_${kind} = 0.0_JP${kind} - (PI / 2.0_JP${kind})
+ELSE IF ((PB == 0.0_JP${kind}) .AND. (PA == 0.0_JP${kind})) THEN
+  BR_ATAN2_${kind} = 0.0_JP${kind}
+END IF
+
+END FUNCTION BR_ATAN2_${kind}
+
+ELEMENTAL REAL (KIND=JP${kind}) FUNCTION BR_POWRR_${kind}(PVAL, PPOW)
+!\$ACC ROUTINE SEQ
+REAL (KIND=JP${kind}), INTENT(IN) :: PVAL, PPOW
+BR_POWRR_${kind} = BR_EXP (PPOW * BR_LOG (PVAL))
+END FUNCTION
+
+ELEMENTAL REAL (KIND=JP${kind}) FUNCTION BR_POWRN_${kind}(PVAL, KPOW)
+!\$ACC ROUTINE SEQ
+REAL (KIND=JP${kind}), INTENT(IN) :: PVAL
+INTEGER, INTENT (IN) :: KPOW
+INTEGER :: J
+BR_POWRN_${kind} = 1._JP${kind}
+DO J = 1, KPOW
+  BR_POWRN_${kind} = BR_POWRN_${kind} * PVAL
+ENDDO
+END FUNCTION
+
+EOF
+  }
+
+$fh->print (<< "EOF");
+ELEMENTAL INTEGER FUNCTION BR_POWNN (KVAL, KPOW)
+!\$ACC ROUTINE SEQ
+INTEGER, INTENT(IN) :: KVAL, KPOW
+INTEGER :: J
+BR_POWNN = 1
+DO J = 1, KPOW
+  BR_POWNN = BR_POWNN * KVAL
+ENDDO
+END FUNCTION
+
+END MODULE
+EOF
+
+__END__
+
+ELEMENTAL FUNCTION BR_POWN(PVAL,KPOW)
+!$acc routine seq
+REAL (KIND=JPRB), INTENT(IN) :: PVAL
+INTEGER         , INTENT(IN) :: KPOW
+REAL (KIND=JPRB)             :: BR_POWN
+INTEGER :: I
+BR_POWN = 1._JPRB
+DO I = 1, KPOW
+  BR_POWN = PVAL * BR_POWN
+ENDDO
+END FUNCTION BR_POWN
+
+ELEMENTAL FUNCTION BR_SIN(PVAL)
+!$acc routine seq
+REAL (KIND=JPRB), INTENT(IN) :: PVAL
+REAL (KIND=JPRB)             :: BR_SIN
+BR_SIN = BR_SIN_C(REAL(PVAL,KIND=C_DOUBLE))
+END FUNCTION BR_SIN
+
+ELEMENTAL FUNCTION BR_ASIN(PVAL)
+!$acc routine seq
+REAL (KIND=JPRB), INTENT(IN) :: PVAL
+REAL (KIND=JPRB)             :: BR_ASIN
+BR_ASIN = BR_ASIN_C(REAL(PVAL,KIND=C_DOUBLE))
+END FUNCTION BR_ASIN
+
+ELEMENTAL FUNCTION BR_COS(PVAL)
+!$acc routine seq
+REAL (KIND=JPRB), INTENT(IN) :: PVAL
+REAL (KIND=JPRB)             :: BR_COS
+BR_COS = BR_COS_C(REAL(PVAL,KIND=C_DOUBLE))
+END FUNCTION BR_COS
+
+ELEMENTAL FUNCTION BR_ATAN2(PA,PB)
+!$acc routine seq
+
+REAL (KIND=JPRB), INTENT(IN) :: PA,PB
+REAL (KIND=JPRB)             :: BR_ATAN2
+
+IF (PB > 0.0) THEN 
+   BR_ATAN2 = BR_ATAN(PA/PB);
+   
+ELSE IF ((PB < 0.0) .AND. (PA >= 0.0)) THEN
+   BR_ATAN2 = BR_ATAN(PA/PB) + XPI;
+   
+ELSE IF ((PB < 0.0) .AND. (PA < 0.0)) THEN
+   BR_ATAN2 = BR_ATAN(PA/PB) - XPI;
+   
+ELSE IF ((PB == 0.0) .AND. (PA > 0.0)) THEN
+   BR_ATAN2 = XPI / 2.0 ;
+   
+ELSE IF ((PB == 0.0) .AND. (PA < 0.0)) THEN
+   BR_ATAN2 = 0.0 - (XPI / 2.0 );
+   
+ELSE IF ((PB == 0.0) .AND. (PA == 0.0)) THEN
+   BR_ATAN2 = 0;               ! REPRESENTS UNDEFINED
+END IF
+
+END FUNCTION BR_ATAN2
+
+END MODULE BR_INTRINSICS
